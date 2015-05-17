@@ -17,10 +17,15 @@ $cliente->updateCantidad('1.5', 'RojoFiebre', 'Ironlak');
 $rows = $cliente->getItems('Ironlak');
 printArray($rows);
 
+echo "<br> Añado descripción: <br>";
 $rows[0]['Descripcion'] = "Atora mucho las boquillas";
 $a=$cliente->updateItem($rows, 'Ironlak');
 echo "<br>".$a."<br>";
 $rows = $cliente->getItems('Ironlak');
+printArray($rows);
+
+echo "<br> Todos los almacenes de Usuario: <br>";
+$rows=$cliente->getAlmacenes("Usuario");
 printArray($rows);
 
 

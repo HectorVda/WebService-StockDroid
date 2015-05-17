@@ -13,14 +13,15 @@ abstract class DBModel {
 
     private function open_connection() {
         include "adodb5/adodb.inc.php";
-        $bd=NewADOConnection("mysql");
-        $bd->Connect(
+        $db=NewADOConnection("mysql");
+        $db->Connect(
             self::$db_host,
             self::$db_user,
             self::$db_pass,
             self::$db_name);
-
-        self::$conn = $bd;
+        $db->EXECUTE("set names 'utf8'"); 
+        
+        self::$conn = $db;
     }
     
     /**
@@ -44,15 +45,16 @@ abstract class DBModel {
         return $rows;
     }
 
-   /**
-    * 
-    * @param string $query
-    */
+  /**
+   * 
+   * @param string $query
+   * @return boolean
+   */
     public function execute_single_query($query) {
         if (self::$conn == null) {
             $this->open_connection();            
         }
-        self::$conn->Execute($query);
+        return self::$conn->Execute($query);
     }
 
   
