@@ -8,6 +8,7 @@
 
 $cliente = new SoapClient("http://localhost/DWES/WebService_StockDroid/Webservice/SoapServer.php?wsdl");
 
+/*
 echo "Items de la estantería Ironlak <br>";
 $rows = $cliente->getItems('Ironlak');
 printArray($rows);
@@ -27,7 +28,9 @@ printArray($rows);
 echo "<br> Todos los almacenes de Usuario: <br>";
 $rows=$cliente->getAlmacenes("Usuario");
 printArray($rows);
+*/
 
+echo $cliente->login("Usuario","Usuario");
 
 function printArray($array){
     foreach ($array as $fila) {

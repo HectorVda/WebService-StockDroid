@@ -28,62 +28,56 @@ class Consulta extends DBModel {
         return $rows;
     }
 
-    /**
-     * Actualiza los datos de un Almacen
-     * @param array $valores
-     * @param string $CodigoAlmacen
-     * @return boolean
-     */
-    public function updateAlmacenes($valores, $CodigoAlmacen) {
-        $Sql = "UPDATE almacen SET ";
-
-        if (is_array($valores)) {
-            foreach ($valores as $fila) {
-                $i = 0;
-                foreach ($fila as $columna => $valor) {
-                    if (!($i % 2 == 0)) {
-                        $Sql .= $columna . "= '" . $valor . "', ";
-                    }
-                    $i++;
-                }
-                $Sql = substr($Sql, 0, strlen($Sql) - 2);
+   /**
+    * Actualiza el nombre y descripción de un Almacén
+    * @param string $CodigoAlmacen
+    * @param string $nombre
+    * @param string $descripcion
+    * @return int
+    */
+    public function updateAlmacen($CodigoAlmacen, $nombre, $descripcion) {
+        $Sql = "UPDATE almacen SET Nombre = '$nombre', Descripcion = '$descripcion";
                 $Sql.=" WHERE Codigo='$CodigoAlmacen'";
-                return $this->execute_single_query($Sql);
-            }
-        }
-        return false;
+                if ($this->execute_single_query($Sql)){
+                    return 1;
+                }
+        return 0;
     }
 
-    /**
-     * Crea un Almacén
-     * @param array $valores
-     * @param string $Usuario
-     * @return boolean
-     */
-    public function createAlmacenes($valores, $Usuario) {
+   /**
+    * Crea un almacen y genera la gestión 
+    * @param string $nombre
+    * @param string $descripcion
+    * @param string $Usuario
+    * @return int
+    */
+    public function createAlmacen($nombre, $descripcion, $Usuario) {
         $codigo = $this->generarCodigo();
-        $Sql = "INSERT INTO estanteria VALUES ('$codigo'";
-        foreach ($valores as $valor) {
-            $Sql.=", '$valor'";
-        }
-        $Sql.=")";
+        $Sql = "INSERT INTO almacen VALUES ('$codigo', '$nombre', '$descripcion', '$usuario')";
        $creado= $this->execute_single_query($Sql);
-       $correcto=false;
+       
        if($creado){
-            $correcto=$this->gestionar($Usuario, $codigo);
+            if($this->createGestion($Usuario, $codigo)){
+                return 1;
+            }
        }
-       return $correcto;
+       return 0;
        
     }
 
     /**
      * Elimina un Almacén
      * @param string $codigo
-     * @return boolean
+     * @param string $usuario
+     * @return integer
      */
-    public function deleteAlmacenes($codigo) {
-        $Sql = "DELETE FROM almacenes WHERE codigo='$codigo'";
-       return $this->execute_single_query($Sql);
+    private function deleteAlmacen($codigo, $usuario) {
+        
+        $Sql = "DELETE FROM almacen WHERE codigo='$codigo' AND Creador='$usuario'";
+       if ($this->execute_single_query($Sql)){
+           return 1;
+       }
+       return 0;
     }
 
     /*
@@ -110,58 +104,52 @@ class Consulta extends DBModel {
     }
 
     /**
-     * Actualiza los valores de una Estantería
-     * @param array $valores
+     * Actualiza el nombre y descripción de una Estantería
+     * @param string $codigo
      * @param string $CodigoAlmacen
-     * @return boolean
+     * @param string $nombre
+     * @param string $descripcion
+     * @return int
      */
-    public function updateEstanteria($valores, $CodigoAlmacen) {
-        $Sql = "UPDATE estanteria SET ";
+    public function updateEstanteria($codigo, $CodigoAlmacen, $nombre, $descripcion) {
+        $Sql = "UPDATE estanteria SET Nombre='$nombre', Descripcion='$descripcion'";
 
-        if (is_array($valores)) {
-            foreach ($valores as $fila) {
-                $i = 0;
-                $CodigoEstanteria = $fila['Codigo'];
-                foreach ($fila as $columna => $valor) {
-                    if (!($i % 2 == 0)) {
-                        $Sql .= $columna . "= '" . $valor . "', ";
-                    }
-                    $i++;
-                }
-                $Sql = substr($Sql, 0, strlen($Sql) - 2);
                 if ($CodigoAlmacen != '') {
-                    $Sql.=" WHERE CodigoAlmacen='$CodigoAlmacen' AND Codigo='$CodigoEstanteria'";
-                    return $this->execute_single_query($Sql);
+                    $Sql.=" WHERE CodigoAlmacen='$CodigoAlmacen' AND Codigo='$codigo'";
+                    if ($this->execute_single_query($Sql)){
+                        return 1;
+                    }
                 }
-            }
-        }
-        return false;
+        return 0;
     }
 
     /**
-     * Crea una estantería
-     * @param array $valores
+     * Crea una Estantería.
+     * @param string $nombre
+     * @param string $descripcion
      * @param string $CodigoAlmacen
-     * @return boolean
+     * @return int
      */
-    public function createEstanteria($valores, $CodigoAlmacen) {
+    public function createEstanteria($nombre, $descripcion, $CodigoAlmacen) {
         $codigo = $this->generarCodigo();
-        $Sql = "INSERT INTO estanteria VALUES ('$codigo', '$CodigoAlmacen'";
-        foreach ($valores as $valor) {
-            $Sql.=", '$valor'";
+        $Sql = "INSERT INTO estanteria VALUES ('$codigo', '$CodigoAlmacen', '$nombre', '$descripcion')";
+        if($this->execute_single_query($Sql)){
+            return 1;
         }
-        $Sql.=")";
-        return $this->execute_single_query($Sql);
+        return 0;
     }
 
     /**
      * Elimina una Estantería
      * @param string $codigo
-     * @return boolean
+     * @return integer
      */
     public function deleteEstanteria($codigo) {
         $Sql = "DELETE FROM estanteria WHERE codigo='$codigo'";
-        return $this->execute_single_query($Sql);
+        if($this->execute_single_query($Sql)){
+            return 1;
+        }
+        return 0;
     }
 
     /*
@@ -187,33 +175,25 @@ class Consulta extends DBModel {
         return $rows;
     }
 
-    /**
-     * Actualiza los valores de un Item
-     * @param array $valores
-     * @param string $CodigoEstanteria
-     * @return boolean
-     */
-    public function updateItem($valores, $CodigoEstanteria) {
-        $Sql = "UPDATE item SET ";
-
-        if (is_array($valores)) {
-            foreach ($valores as $fila) {
-                $i = 0;
-                $CodigoItem = $fila['Codigo'];
-                foreach ($fila as $columna => $valor) {
-                    if (!($i % 2 == 0)) {
-                        $Sql .= $columna . "= '" . $valor . "', ";
-                    }
-                    $i++;
-                }
-                $Sql = substr($Sql, 0, strlen($Sql) - 2);
+   /**
+    * Actualiza los valores de un Item
+    * @param string $codigo
+    * @param string $CodigoEstanteria
+    * @param float $cantidad
+    * @param string $nombre
+    * @param string $descripcion
+    * @return int
+    */
+    public function updateItem($codigo, $CodigoEstanteria, $cantidad, $nombre, $descripcion) {
+        $Sql = "UPDATE item SET Nombre='$nombre', Cantidad='$cantidad', Descripcion='$descripcion'";
+        
                 if ($CodigoEstanteria != '') {
-                    $Sql.=" WHERE CodigoEstanteria='$CodigoEstanteria' AND Codigo='$CodigoItem'";
-                   return $this->execute_single_query($Sql);
+                    $Sql.=" WHERE CodigoEstanteria='$CodigoEstanteria' AND Codigo='$codigo'";
+                   if($this->execute_single_query($Sql)){
+                       return 1;
+                   }
                 }
-            }
-        }
-        return false;
+        return 0;
     }
 
     /**
@@ -221,40 +201,46 @@ class Consulta extends DBModel {
      * @param float $numero
      * @param string $CodigoItem
      * @param string $CodigoEstanteria
-     * @return boolean
+     * @return integer
      */
     public function updateCantidad($numero, $CodigoItem, $CodigoEstanteria) {
         $Sql = "UPDATE Item SET Cantidad = '$numero' WHERE Codigo = '$CodigoItem' AND CodigoEstanteria='$CodigoEstanteria'";
-       return $this->execute_single_query($Sql);
+       if($this->execute_single_query($Sql)){
+           return 1;
+       }
+       return 0;
     }
 
     /**
-     * Crea un nuevo item en una estantería
-     * @param array $item
+     * Crea un nuevo Item
+     * @param string $nombre
+     * @param float $cantidad
+     * @param string $descripcion
      * @param string $CodigoEstanteria
-     * @return boolean
+     * @return int
      */
-    public function createItem($item, $CodigoEstanteria) {
-        $Sql = "UPDATE Items SET ";
-        if (is_array($item)) {
-            foreach ($valores as $id => $valor) {
-                $Sql .= $id . "=" . $valor . " ";
-            }
-            $Sql.=" WHERE CodigoEstanteria='$CodigoEstanteria'";
-        }
+    public function createItem($nombre, $cantidad, $descripcion, $CodigoEstanteria) {
+        $codigo = $this->generarCodigo();
+        $Sql = "INSERT INTO Item VALUES (Codigo='$codigo', Nombre='$nombre', Cantidad='$cantidad', Descripcion='$descripcion', CodigoEstanteria='$CodigoEstanteria')";
 
-       return $this->execute_single_query($Sql);
+       if($this->execute_single_query($Sql)){
+           return 1;
+       }
+       return 0;
     }
 
     /**
      * Elimina un Item de una Estantería
      * @param string $CodigoItem
      * @param string $CodigoEstanteria
-     * @return boolean
+     * @return integer
      */
     public function deleteItem($CodigoItem, $CodigoEstanteria) {
         $Sql = "DELETE FROM Item WHERE Codigo = '$CodigoItem'  AND CodigoEstanteria='$CodigoEstanteria'";
-        return $this->execute_single_query($Sql);
+        if($this->execute_single_query($Sql)){
+            return 1;
+        }
+        return 0;
     }
 
     /*
@@ -266,35 +252,79 @@ class Consulta extends DBModel {
       ------------------------------------ USUARIOS ---------------------------
      */
 
-    /**
-     * Registra un nuevo usuario
-     * @param array $valores
-     * @return boolean
-     */
-    public function registrar($valores) {
-        $Sql = "INSERT INTO usuario VALUES (";
-        foreach ($valores as $valor) {
-            $Sql.="'$valor', ";
+   /**
+    * Registra un usuario
+    * @param string $NombreUsuario
+    * @param string $nombre
+    * @param string $apellidos
+    * @param string $pass
+    * @return integer
+    */
+    public function registrar($NombreUsuario, $nombre, $apellidos, $pass) {
+        $Sql = "INSERT INTO usuario VALUES ('$NombreUsuario', '$nombre',  '$apellidos', '$pass' )";
+        if ($this->execute_single_query($Sql)){
+            return 1;
+        }else{
+            return 0;
         }
-         $Sql = substr($Sql, 0, strlen($Sql) - 2);
-         $Sql.=")";
-        return $this->execute_single_query($Sql);
     }
 
     /**
      * Devuelve si un usuario es correcto o no.
-     * @param string $nombre
-     * @param string $pass
-     * @return boolean
+     * @param string $Usuario
+     * @param string $Password
+     * @return integer
      */
-    public function login($nombre, $pass) {
-        $sql="SELECT * FROM usuario WHERE NombreUsuario='$nombre' AND Password='$pass'";
-        return $this->execute_single_query($sql);
+    public function login($Usuario, $Password) {
+        $sql="SELECT * FROM usuario WHERE NombreUsuario='$Usuario' AND Password='$Password'";
+        $row = $this->get_results_from_query($sql);
+        if(count($row)>0){
+            return 1;
+        }
+        return 0;
     }
 
     /*
       ------------------------------------ / USUARIOS ---------------------------
      */
+    
+    /*
+     * ----------------------------------- GESTION ---------------------------------
+     */
+    
+    /**
+ * Añade una relación entre un usuario y un almacén
+ * @param string $Usuario
+ * @param string $CodigoAlmacen
+ * @return integer
+ */
+    public function createGestion($Usuario, $CodigoAlmacen) {
+        
+        $Sql = "INSERT INTO gestiona VALUES ('$CodigoAlmacen', '$Usuario')";
+       if($this->execute_single_query($Sql)){
+           return 1;
+       }
+       return 0;
+    }
+    
+    /**
+     * Elimina una relación de gestión de un usuario y un almacén
+     * @param string $Usuario
+     * @param string $CodigoAlmacen
+     * @return integer
+     */
+    public function deleteGestion($Usuario, $CodigoAlmacen) {
+        
+        $relacion=false;
+        $Sql = "DELETE FROM gestiona WHERE CodigoAlmacen='$CodigoAlmacen' AND NombreUsuario = '$Usuario'";
+        $relacion= $this->execute_single_query($Sql);
+        if($relacion){
+           if( $this->deleteAlmacen($CodigoAlmacen, $Usuario)){
+              return 1;
+           }
+        }
+        return 0;
+    }
 
     /*
      * ----------------------------------- Funciones Privadas -----------------------
@@ -307,15 +337,6 @@ class Consulta extends DBModel {
     private function generarCodigo() {
         return openssl_random_pseudo_bytes(20);
     }
-/**
- * Añade una relación entre un usuario y un almacén
- * @param string $Usuario
- * @param string $CodigoAlmacen
- * @return boolean
- */
-    private function gestionar($Usuario, $CodigoAlmacen) {
-        $Sql = "INSERT INTO gestiona VALUES ('$CodigoAlmacen', '$Usuario')";
-       return $this->execute_single_query($Sql);
-    }
+
 
 }
