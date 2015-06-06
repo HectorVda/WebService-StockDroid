@@ -30,7 +30,8 @@ $rows=$cliente->getAlmacenes("Usuario");
 printArray($rows);
 */
 
-echo $cliente->login("Usuario","Usuario");
+//echo $cliente->login("Usuario","Usuario");
+echo $cliente->deleteGestion("hector", "556f17a29efea"); 
 
 function printArray($array){
     foreach ($array as $fila) {
